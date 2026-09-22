@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusiness(BusinessException ex, HttpServletRequest req) {
-        return build(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), req, null);
+        return build(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), req, null);
     }
 
     @ExceptionHandler(InvalidOperationException.class)

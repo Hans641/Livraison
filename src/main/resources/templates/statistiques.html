@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Statistiques')}"></head>
+<body>
+<div th:replace="~{fragments :: nav}"></div>
+
+<main class="page" id="contenu">
+    <div th:replace="~{fragments :: messages}"></div>
+
+    <header class="page-head">
+        <div>
+            <h1>Statistiques de production</h1>
+            <p class="page-sub">Analysez la performance de vos livraisons sur la période de votre choix.</p>
+        </div>
+        <div class="page-actions">
+            <button type="button" class="btn secondary" data-print><i class="fa-solid fa-print" aria-hidden="true"></i> Imprimer</button>
+        </div>
+    </header>
+
+    <!-- ============ FILTRES ============ -->
+    <form class="panel" method="get" th:action="@{/statistiques}" aria-label="Filtres de période">
+        <div class="panel-body">
+            <div class="form-inline">
+                <div class="field">
+                    <label for="debut">Début</label>
+                    <input id="debut" type="date" name="debut" class="form-control" th:value="${debut}">
+                </div>
+                <div class="field">
+                    <label for="fin">Fin</label>
+                    <input id="fin" type="date" name="fin" class="form-control" th:value="${fin}">
+                </div>
+                <div class="field">
+                    <label for="zone">Zone</label>
+                    <div class="input-icon">
+                        <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                        <input id="zone" type="text" name="zone" class="form-control" placeholder="Ex : Tanà Sud" th:value="${zone}">
+                    </div>
+                </div>
+                <button type="submit" class="btn"><i class="fa-solid fa-filter" aria-hidden="true"></i> Appliquer</button>
+            </div>
+            <div class="range-chips mt-3" role="group" aria-label="Périodes rapides">
+                <span class="text-faint fw-semibold small align-self-center me-1">Période rapide</span>
+                <button type="button" class="chip" data-range="7d">7 derniers jours</button>
+                <button type="button" class="chip" data-range="30d">30 derniers jours</button>
+                <button type="button" class="chip" data-range="month">Ce mois</button>
+                <button type="button" class="chip" data-range="year">Cette année</button>
+                <button type="button" class="chip" data-range="all">Tout afficher</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- ============ ONGLETS ============ -->
+    <div class="d-flex mt-4 mb-3">
+        <div class="seg" role="tablist" aria-label="Vues statistiques">
+            <button type="button" class="active" id="t-overview" role="tab" data-bs-toggle="tab" data-bs-target="#tab-overview"
+                    aria-controls="tab-overview" aria-selected="true">
+                <i class="fa-solid fa-chart-pie" aria-hidden="true"></i> Vue d'ensemble
+            </button>
+            <button type="button" id="t-finance" role="tab" data-bs-toggle="tab" data-bs-target="#tab-finance"
+                    aria-controls="tab-finance" aria-selected="false" tabindex="-1">
+                <i class="fa-solid fa-coins" aria-hidden="true"></i> Finances
+            </button>
+            <button type="button" id="t-defs" role="tab" data-bs-toggle="tab" data-bs-target="#tab-defs"
+                    aria-controls="tab-defs" aria-selected="false" tabindex="-1">
+                <i class="fa-solid fa-book-open" aria-hidden="true"></i> Définitions
+            </button>
+        </div>
+    </div>
+
+    <div class="tab-content"
+         th:with="revenuKm=${stats.distanceTotaleParcourue > 0 ? stats.chiffreAffaires / stats.distanceTotaleParcourue : 0},
+                  distanceMoy=${stats.nombreLivraisons > 0 ? stats.distanceTotaleParcourue / stats.nombreLivraisons : 0}">
+
+        <!-- ---------- Vue d'ensemble ---------- -->
+        <div class="tab-pane fade show active" id="tab-overview" role="tabpanel" aria-labelledby="t-overview" tabindex="0">
+
+            <section class="kpi-grid" aria-label="Indicateurs de performance">
+                <article class="kpi kpi-emerald">
+                    <div class="kpi-top">
+                        <span class="kpi-label">Livraisons réussies</span>
+                        <span class="kpi-icon"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="kpi-value"><span th:data-count="${stats.nombreLivraisons}" th:text="${stats.nombreLivraisons}">0</span></div>
+                    <div class="kpi-foot">Commandes au statut « Livrée »</div>
+                </article>
+
+                <article class="kpi">
+                    <div class="kpi-top">
+                        <span class="kpi-label">Taux de réussite</span>
+                        <span class="kpi-icon"><i class="fa-solid fa-bullseye" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="kpi-value"><span data-decimals="1" th:data-count="${stats.tauxReussite}"
+                                                 th:text="${#numbers.formatDecimal(stats.tauxReussite, 1, 'WHITESPACE', 1, 'COMMA')}">0</span><span class="unit">%</span></div>
+                    <div class="meter" role="progressbar" aria-label="Taux de réussite" aria-valuemin="0" aria-valuemax="100"
+                         th:attr="aria-valuenow=${stats.tauxReussite}"><span th:style="'--w:' + ${stats.tauxReussite} + '%'"></span></div>
+                </article>
+
+                <article class="kpi kpi-coral">
+                    <div class="kpi-top">
+                        <span class="kpi-label">Taux d'échec</span>
+                        <span class="kpi-icon"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="kpi-value"><span data-decimals="1" th:data-count="${stats.tauxEchec}"
+                                                 th:text="${#numbers.formatDecimal(stats.tauxEchec, 1, 'WHITESPACE', 1, 'COMMA')}">0</span><span class="unit">%</span></div>
+                    <div class="meter" role="progressbar" aria-label="Taux d'échec" aria-valuemin="0" aria-valuemax="100"
+                         th:attr="aria-valuenow=${stats.tauxEchec}"><span th:style="'--w:' + ${stats.tauxEchec} + '%'"></span></div>
+                </article>
+
+                <article class="kpi kpi-amber">
+                    <div class="kpi-top">
+                        <span class="kpi-label">Délai moyen de livraison</span>
+                        <span class="kpi-icon"><i class="fa-solid fa-stopwatch" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="kpi-value"><span data-decimals="1" th:data-count="${stats.delaiMoyenHeures}"
+                                                 th:text="${#numbers.formatDecimal(stats.delaiMoyenHeures, 1, 'WHITESPACE', 1, 'COMMA')}">0</span><span class="unit">h</span></div>
+                    <div class="kpi-foot">De la création à la remise</div>
+                </article>
+            </section>
+
+            <section class="panel" aria-labelledby="repartition-title">
+                <div class="panel-head">
+                    <div>
+                        <h2 class="panel-title" id="repartition-title">
+                            <span class="ico emerald"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i></span>Répartition des commandes
+                        </h2>
+                        <p class="panel-desc">Cliquez sur une légende pour masquer ou afficher une catégorie.</p>
+                    </div>
+                    <div class="seg" role="group" aria-label="Type de graphique">
+                        <button type="button" class="active" aria-pressed="true" data-chart-view="doughnut" data-target="chart-repartition">
+                            <i class="fa-solid fa-circle-notch" aria-hidden="true"></i> Anneau
+                        </button>
+                        <button type="button" aria-pressed="false" data-chart-view="bar" data-target="chart-repartition">
+                            <i class="fa-solid fa-chart-bar" aria-hidden="true"></i> Barres
+                        </button>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="chart-layout split">
+                        <div class="chart-box tall">
+                            <canvas id="chart-repartition" data-chart="repartition"
+                                    th:data-reussite="${stats.tauxReussite}" th:data-echec="${stats.tauxEchec}"
+                                    role="img" aria-label="Répartition des commandes entre livrées, échecs et retours, et en cours ou annulées"></canvas>
+                        </div>
+                        <ul class="legend" data-legend-for="chart-repartition"></ul>
+                        <div class="chart-empty empty-state" data-empty-for="chart-repartition">
+                            <span class="empty-ico"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i></span>
+                            <h3>Aucune livraison ni échec sur cette période</h3>
+                            <p>Élargissez la période ou retirez le filtre de zone pour afficher le graphique.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ---------- Finances ---------- -->
+        <div class="tab-pane fade" id="tab-finance" role="tabpanel" aria-labelledby="t-finance" tabindex="0">
+            <section class="kpi-grid" aria-label="Indicateurs financiers et logistiques">
+                <article class="kpi kpi-violet">
+                    <div class="kpi-top">
+                        <span class="kpi-label">Chiffre d'affaires</span>
+                        <span class="kpi-icon"><i class="fa-solid fa-coins" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="kpi-value"><span th:data-count="${stats.chiffreAffaires}"
+                                                 th:text="${#numbers.formatDecimal(stats.chiffreAffaires, 0, 'WHITESPACE', 0, 'POINT')}">0</span><span class="unit">Ar</span></div>
+                    <div class="kpi-foot">Commandes livrées uniquement</div>
+                </article>
+
+                <article class="kpi kpi-violet">
+                    <div class="kpi-top">
+                        <span class="kpi-label">Revenu moyen par livraison</span>
+                        <span class="kpi-icon"><i class="fa-solid fa-receipt" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="kpi-value"><span th:data-count="${stats.revenuMoyenParLivraison}"
+                                                 th:text="${#numbers.formatDecimal(stats.revenuMoyenParLivraison, 0, 'WHITESPACE', 0, 'POINT')}">0</span><span class="unit">Ar</span></div>
+                    <div class="kpi-foot">Chiffre d'affaires ÷ livraisons</div>
+                </article>
+
+                <article class="kpi kpi-slate">
+                    <div class="kpi-top">
+                        <span class="kpi-label">Distance totale parcourue</span>
+                        <span class="kpi-icon"><i class="fa-solid fa-route" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="kpi-value"><span data-decimals="1" th:data-count="${stats.distanceTotaleParcourue}"
+                                                 th:text="${#numbers.formatDecimal(stats.distanceTotaleParcourue, 0, 'WHITESPACE', 1, 'COMMA')}">0</span><span class="unit">km</span></div>
+                    <div class="kpi-foot">
+                        Soit <strong th:text="${#numbers.formatDecimal(distanceMoy, 0, 'WHITESPACE', 1, 'COMMA')} + ' km'">0 km</strong> par livraison
+                    </div>
+                </article>
+
+                <article class="kpi kpi-emerald">
+                    <div class="kpi-top">
+                        <span class="kpi-label">Revenu par kilomètre</span>
+                        <span class="kpi-icon"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="kpi-value"><span th:data-count="${revenuKm}"
+                                                 th:text="${#numbers.formatDecimal(revenuKm, 0, 'WHITESPACE', 0, 'POINT')}">0</span><span class="unit">Ar/km</span></div>
+                    <div class="kpi-foot">Indicateur de rentabilité des trajets</div>
+                </article>
+            </section>
+        </div>
+
+        <!-- ---------- Définitions ---------- -->
+        <div class="tab-pane fade" id="tab-defs" role="tabpanel" aria-labelledby="t-defs" tabindex="0">
+            <section class="panel" aria-labelledby="defs-title">
+                <div class="panel-head">
+                    <h2 class="panel-title" id="defs-title">
+                        <span class="ico"><i class="fa-solid fa-book-open" aria-hidden="true"></i></span>Comment sont calculés les indicateurs ?
+                    </h2>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table table-cards">
+                        <thead>
+                        <tr><th>Indicateur</th><th class="num">Valeur</th><th>Définition</th></tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td class="c-main cell-title">Livraisons réussies</td>
+                            <td class="c-meta num" data-label="Valeur" th:text="${stats.nombreLivraisons}">0</td>
+                            <td class="c-meta text-soft" data-label="Définition">Nombre de commandes au statut « Livrée » créées sur la période.</td>
+                        </tr>
+                        <tr>
+                            <td class="c-main cell-title">Taux de réussite</td>
+                            <td class="c-meta num" data-label="Valeur" th:text="${#numbers.formatDecimal(stats.tauxReussite, 1, 'WHITESPACE', 2, 'COMMA')} + ' %'">0 %</td>
+                            <td class="c-meta text-soft" data-label="Définition">Commandes livrées ÷ toutes les commandes créées sur la période.</td>
+                        </tr>
+                        <tr>
+                            <td class="c-main cell-title">Taux d'échec</td>
+                            <td class="c-meta num" data-label="Valeur" th:text="${#numbers.formatDecimal(stats.tauxEchec, 1, 'WHITESPACE', 2, 'COMMA')} + ' %'">0 %</td>
+                            <td class="c-meta text-soft" data-label="Définition">(Échecs de livraison + commandes retournées) ÷ toutes les commandes de la période.</td>
+                        </tr>
+                        <tr>
+                            <td class="c-main cell-title">Délai moyen</td>
+                            <td class="c-meta num" data-label="Valeur" th:text="${#numbers.formatDecimal(stats.delaiMoyenHeures, 1, 'WHITESPACE', 2, 'COMMA')} + ' h'">0 h</td>
+                            <td class="c-meta text-soft" data-label="Définition">Durée moyenne entre la création d'une commande et sa livraison effective.</td>
+                        </tr>
+                        <tr>
+                            <td class="c-main cell-title">Chiffre d'affaires</td>
+                            <td class="c-meta num" data-label="Valeur" th:text="${#numbers.formatDecimal(stats.chiffreAffaires, 0, 'WHITESPACE', 0, 'POINT')} + ' Ar'">0 Ar</td>
+                            <td class="c-meta text-soft" data-label="Définition">Somme des prix des commandes livrées.</td>
+                        </tr>
+                        <tr>
+                            <td class="c-main cell-title">Revenu moyen par livraison</td>
+                            <td class="c-meta num" data-label="Valeur" th:text="${#numbers.formatDecimal(stats.revenuMoyenParLivraison, 0, 'WHITESPACE', 0, 'POINT')} + ' Ar'">0 Ar</td>
+                            <td class="c-meta text-soft" data-label="Définition">Chiffre d'affaires ÷ nombre de livraisons réussies.</td>
+                        </tr>
+                        <tr>
+                            <td class="c-main cell-title">Distance totale parcourue</td>
+                            <td class="c-meta num" data-label="Valeur" th:text="${#numbers.formatDecimal(stats.distanceTotaleParcourue, 0, 'WHITESPACE', 1, 'COMMA')} + ' km'">0 km</td>
+                            <td class="c-meta text-soft" data-label="Définition">Somme des distances des commandes livrées.</td>
+                        </tr>
+                        <tr>
+                            <td class="c-main cell-title">Revenu par kilomètre</td>
+                            <td class="c-meta num" data-label="Valeur" th:text="${#numbers.formatDecimal(revenuKm, 0, 'WHITESPACE', 0, 'POINT')} + ' Ar/km'">0 Ar/km</td>
+                            <td class="c-meta text-soft" data-label="Définition">Chiffre d'affaires ÷ distance totale parcourue (indicateur calculé à l'affichage).</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="panel-foot text-faint small">
+                    La période porte sur la date de création des commandes. Le filtre de zone doit correspondre exactement au nom de la zone (sans tenir compte des majuscules).
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+
+<script defer th:src="@{/js/vendor/chart.umd.min.js}"></script>
+<script defer th:src="@{/js/charts.js}"></script>
+</body>
+</html>

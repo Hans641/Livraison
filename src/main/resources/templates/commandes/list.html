@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments :: head('Commandes')}"></head>
+<body>
+<div th:replace="~{fragments :: nav}"></div>
+
+<main class="page" id="contenu">
+    <div th:replace="~{fragments :: messages}"></div>
+
+    <header class="page-head">
+        <div>
+            <h1>Commandes</h1>
+            <p class="page-sub">Gérez et suivez l'ensemble de vos expéditions
+                · <strong th:text="${commandes.totalElements}">0</strong> au total</p>
+        </div>
+        <div class="page-actions">
+            <a th:href="@{/commandes/nouvelle}" class="btn"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nouvelle commande</a>
+        </div>
+    </header>
+
+    <section class="panel" aria-label="Liste des commandes">
+
+        <!-- Outils : recherche live (page affichée) + filtre de zone (serveur) -->
+        <div class="table-tools">
+            <div class="search">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input type="search" id="commandes-search" class="form-control" autocomplete="off"
+                       placeholder="Rechercher un numéro, un client, une zone…"
+                       aria-label="Rechercher dans les commandes affichées" data-table-search="commandes-table">
+                <kbd aria-hidden="true">/</kbd>
+                <button type="button" class="search-clear" aria-label="Effacer la recherche"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+            </div>
+
+            <form class="filters-inline" method="get" th:action="@{/commandes}">
+                <input type="hidden" name="statut" th:if="${statutFiltre != null}" th:value="${statutFiltre}">
+                <div class="input-icon">
+                    <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                    <input type="text" name="zone" class="form-control" placeholder="Filtrer par zone" aria-label="Filtrer par zone" th:value="${zoneFiltre}">
+                </div>
+                <button type="submit" class="btn secondary btn-sm">Filtrer</button>
+                <a class="btn soft btn-sm" th:href="@{/commandes}" th:if="${statutFiltre != null or not #strings.isEmpty(zoneFiltre)}">
+                    <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Réinitialiser
+                </a>
+            </form>
+
+            <span class="table-count" data-table-count="commandes-table" aria-live="polite"></span>
+        </div>
+
+        <!-- Filtre par statut (serveur) -->
+        <nav class="pills" aria-label="Filtrer par statut">
+            <a class="pill" th:classappend="${statutFiltre == null} ? 'active'" th:href="@{/commandes(zone=${zoneFiltre})}">Toutes</a>
+            <a class="pill" th:each="s : ${statuts}"
+               th:classappend="'pill-' + ${s} + (${s == statutFiltre} ? ' active' : '')"
+               th:href="@{/commandes(statut=${s}, zone=${zoneFiltre})}">
+                <span class="dot" aria-hidden="true"></span><span th:text="#{statut.__${s}__}">Statut</span>
+            </a>
+        </nav>
+
+        <!-- Table -->
+        <th:block th:unless="${commandes.isEmpty()}">
+            <div class="table-wrap">
+                <table id="commandes-table" class="data-table table-cards" data-table data-noun="commande">
+                    <thead>
+                    <tr>
+                        <th data-sort="text">N° commande</th>
+                        <th data-sort="text">Client</th>
+                        <th data-sort="text">Zone</th>
+                        <th data-sort="number">Priorité</th>
+                        <th data-sort="number">Statut</th>
+                        <th data-sort="number" class="num">Prix</th>
+                        <th data-sort="number">Date prévue</th>
+                        <th class="col-actions"><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="c : ${commandes.content}" data-row
+                        th:classappend="${c.enRetard} ? 'is-late'"
+                        th:data-href="@{/commandes/{id}(id=${c.id})}"
+                        th:data-numero="${c.numero}"
+                        th:data-statut="${c.statut}"
+                        th:data-client="${c.nomClient}"
+                        th:data-zone="${c.zone}"
+                        th:data-livreur="${c.nomLivreur}"
+                        th:data-adresse-enlevement="${c.adresseEnlevement}"
+                        th:data-adresse-livraison="${c.adresseLivraison}"
+                        th:data-poids="${#numbers.formatDecimal(c.poids, 1, 'WHITESPACE', 1, 'COMMA')} + ' kg'"
+                        th:data-volume="${#numbers.formatDecimal(c.volume, 1, 'WHITESPACE', 2, 'COMMA')} + ' m³'"
+                        th:data-distance="${#numbers.formatDecimal(c.distance, 1, 'WHITESPACE', 1, 'COMMA')} + ' km'"
+                        th:data-prix="${#numbers.formatDecimal(c.prix, 0, 'WHITESPACE', 0, 'POINT')} + ' Ar'"
+                        th:data-date="${#temporals.format(c.datePrevue, 'dd/MM/yyyy à HH:mm')}">
+
+                        <td class="c-main">
+                            <a class="cell-title" th:href="@{/commandes/{id}(id=${c.id})}" th:text="${c.numero}">CMD-0001</a>
+                        </td>
+                        <td class="c-meta" data-label="Client" th:text="${c.nomClient}">Client</td>
+                        <td class="c-meta" data-label="Zone" th:text="${c.zone}">Zone</td>
+                        <td class="c-meta" data-label="Priorité" data-cell="priorite" th:data-sort-value="${c.priorite.ordinal()}">
+                            <span th:replace="~{fragments :: badgePriorite(${c.priorite})}"></span>
+                        </td>
+                        <td class="c-status" data-cell="statut" th:data-sort-value="${c.statut.ordinal()}">
+                            <span th:replace="~{fragments :: badgeStatut(${c.statut})}"></span>
+                            <th:block th:if="${c.enRetard}"><span th:replace="~{fragments :: badgeRetard}"></span></th:block>
+                        </td>
+                        <td class="c-meta num" data-label="Prix" th:data-sort-value="${c.prix}">
+                            <span class="nowrap"><span class="fw-bold" th:text="${#numbers.formatDecimal(c.prix, 0, 'WHITESPACE', 0, 'POINT')}">0</span> <span class="text-faint">Ar</span></span>
+                        </td>
+                        <td class="c-meta" data-label="Date prévue" th:data-sort-value="${#temporals.format(c.datePrevue, 'yyyyMMddHHmm')}">
+                            <span class="cell-date">
+                                <span th:text="${#temporals.format(c.datePrevue, 'dd/MM/yyyy')}">01/01/2026</span>
+                                <small th:text="${#temporals.format(c.datePrevue, 'HH:mm')}">10:00</small>
+                            </span>
+                        </td>
+                        <td class="col-actions c-actions no-search">
+                            <div class="row-actions">
+                                <button type="button" class="icon-btn sm" data-quickview aria-label="Aperçu rapide" title="Aperçu rapide">
+                                    <i class="fa-regular fa-eye" aria-hidden="true"></i>
+                                </button>
+                                <div class="dropdown">
+                                    <button type="button" class="icon-btn sm" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Plus d'actions">
+                                        <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a class="dropdown-item" th:href="@{/commandes/{id}(id=${c.id})}"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>Voir le détail</a></li>
+                                        <li><button type="button" class="dropdown-item" th:data-copy="${c.numero}"><i class="fa-regular fa-copy" aria-hidden="true"></i>Copier le numéro</button></li>
+                                        <th:block sec:authorize="hasAnyRole('ADMIN','MANAGER','OPERATOR')">
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li th:if="${c.statut.name() == 'CREEE'}">
+                                                <a class="dropdown-item" th:href="@{/commandes/{id}(id=${c.id})} + '#actions'"><i class="fa-solid fa-user-plus" aria-hidden="true"></i>Assigner un livreur</a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item danger" th:href="@{/commandes/{id}(id=${c.id})} + '#incident'"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>Signaler un incident</a>
+                                            </li>
+                                        </th:block>
+                                    </ul>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Aucun résultat pour la recherche live -->
+            <div class="table-empty" data-table-empty="commandes-table" hidden>
+                <span class="empty-ico"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span>
+                <h3>Aucun résultat</h3>
+                <p>Aucune commande de cette page ne correspond à « <strong data-query></strong> ».</p>
+                <button type="button" class="btn secondary btn-sm" data-table-reset>Effacer la recherche</button>
+            </div>
+        </th:block>
+
+        <!-- Aucune commande (filtres serveur) -->
+        <div class="empty-state" th:if="${commandes.isEmpty()}">
+            <span class="empty-ico"><i class="fa-solid fa-box-open" aria-hidden="true"></i></span>
+            <h3>Aucune commande ne correspond à vos critères</h3>
+            <p>Modifiez le statut ou la zone, ou créez une nouvelle commande.</p>
+            <div class="d-flex gap-2 flex-wrap justify-content-center">
+                <a class="btn secondary btn-sm" th:href="@{/commandes}" th:if="${statutFiltre != null or not #strings.isEmpty(zoneFiltre)}">Réinitialiser les filtres</a>
+                <a class="btn btn-sm" th:href="@{/commandes/nouvelle}"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nouvelle commande</a>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <nav class="pager" aria-label="Pagination" th:unless="${commandes.isEmpty()}">
+            <p class="pager-info">
+                Affichage de
+                <strong th:text="${commandes.number * commandes.size + 1} + '–' + ${commandes.number * commandes.size + commandes.numberOfElements}">1–10</strong>
+                sur <strong th:text="${commandes.totalElements}">42</strong>
+            </p>
+            <ul class="pager-list" th:if="${commandes.totalPages > 1}">
+                <li>
+                    <a class="page-btn" aria-label="Page précédente"
+                       th:classappend="${commandes.first} ? 'disabled'"
+                       th:attr="tabindex=${commandes.first} ? '-1', aria-disabled=${commandes.first} ? 'true'"
+                       th:href="@{/commandes(page=${commandes.number - 1}, statut=${statutFiltre}, zone=${zoneFiltre})}">
+                        <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                    </a>
+                </li>
+                <th:block th:each="p : ${#numbers.sequence(0, commandes.totalPages - 1)}">
+                    <li th:if="${p == 0 or p == commandes.totalPages - 1 or (p >= commandes.number - 1 and p le commandes.number + 1)}">
+                        <a class="page-btn" th:classappend="${p == commandes.number} ? 'active'"
+                           th:attr="aria-current=${p == commandes.number} ? 'page'"
+                           th:href="@{/commandes(page=${p}, statut=${statutFiltre}, zone=${zoneFiltre})}"
+                           th:text="${p + 1}">1</a>
+                    </li>
+                    <li class="page-gap" aria-hidden="true"
+                        th:if="${(p == commandes.number - 2 and p > 0) or (p == commandes.number + 2 and p lt commandes.totalPages - 1)}">…</li>
+                </th:block>
+                <li>
+                    <a class="page-btn" aria-label="Page suivante"
+                       th:classappend="${commandes.last} ? 'disabled'"
+                       th:attr="tabindex=${commandes.last} ? '-1', aria-disabled=${commandes.last} ? 'true'"
+                       th:href="@{/commandes(page=${commandes.number + 1}, statut=${statutFiltre}, zone=${zoneFiltre})}">
+                        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </section>
+</main>
+
+<!-- ============ Aperçu rapide (rempli par app.js depuis les data-* de la ligne) ============ -->
+<div class="modal fade" id="quickview" tabindex="-1" aria-labelledby="qv-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="qv-title">
+                    <span data-qv="numero">—</span>
+                    <span data-qv-badge></span>
+                    <span data-qv-late hidden><span th:replace="~{fragments :: badgeRetard}"></span></span>
+                </h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <ol class="route mb-4" data-qv-route aria-label="Progression de la commande">
+                    <li class="route-step" data-step="CREEE"><span class="route-dot"></span><span th:text="#{statut.CREEE}">Créée</span></li>
+                    <li class="route-step" data-step="ASSIGNEE"><span class="route-dot"></span><span th:text="#{statut.ASSIGNEE}">Assignée</span></li>
+                    <li class="route-step" data-step="PRISE_EN_CHARGE"><span class="route-dot"></span><span th:text="#{statut.PRISE_EN_CHARGE}">Prise en charge</span></li>
+                    <li class="route-step" data-step="EN_TRANSIT"><span class="route-dot"></span><span th:text="#{statut.EN_TRANSIT}">En transit</span></li>
+                    <li class="route-step is-final" data-step="LIVREE"><span class="route-dot"></span><span th:text="#{statut.LIVREE}">Livrée</span></li>
+                </ol>
+                <div class="route-banner mb-4" data-qv-banner hidden>
+                    <i class="fa-solid fa-circle-info" aria-hidden="true"></i><span data-qv-banner-text></span>
+                </div>
+
+                <dl class="qv-grid info">
+                    <div><dt>Client</dt><dd data-qv="client">—</dd></div>
+                    <div><dt>Zone</dt><dd data-qv="zone">—</dd></div>
+                    <div><dt>Priorité</dt><dd data-qv-prio>—</dd></div>
+                    <div><dt>Livreur</dt><dd data-qv="livreur" data-qv-empty="Non assigné">—</dd></div>
+                    <div class="full"><dt>Adresse d'enlèvement</dt><dd data-qv="adresseEnlevement">—</dd></div>
+                    <div class="full"><dt>Adresse de livraison</dt><dd data-qv="adresseLivraison">—</dd></div>
+                    <div><dt>Poids</dt><dd data-qv="poids">—</dd></div>
+                    <div><dt>Volume</dt><dd data-qv="volume">—</dd></div>
+                    <div><dt>Distance</dt><dd data-qv="distance">—</dd></div>
+                    <div><dt>Date prévue</dt><dd data-qv="date">—</dd></div>
+                    <div class="full"><dt>Prix</dt><dd class="big" data-qv="prix">—</dd></div>
+                </dl>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn secondary" data-qv-copy data-copy=""><i class="fa-regular fa-copy" aria-hidden="true"></i> Copier le numéro</button>
+                <a class="btn" data-qv-link href="#">Ouvrir la commande <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

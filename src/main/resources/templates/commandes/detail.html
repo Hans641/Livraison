@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments :: head('Commande ' + ${commande.numero})}"></head>
+<body>
+<div th:replace="~{fragments :: nav}"></div>
+
+<main class="page" id="contenu">
+    <div th:replace="~{fragments :: messages}"></div>
+
+    <a class="back-link" th:href="@{/commandes}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour aux commandes</a>
+
+    <header class="page-head">
+        <div>
+            <h1 class="d-flex align-items-center flex-wrap gap-3">
+                <span th:text="${commande.numero}">CMD-0001</span>
+                <span th:replace="~{fragments :: badgeStatut(${commande.statut})}"></span>
+                <th:block th:if="${commande.enRetard}"><span th:replace="~{fragments :: badgeRetard}"></span></th:block>
+            </h1>
+            <p class="page-sub">Client <strong th:text="${commande.nomClient}">Client</strong>
+                · Prévue le <span th:text="${#temporals.format(commande.datePrevue, 'dd/MM/yyyy à HH:mm')}">01/01/2026 à 10:00</span></p>
+        </div>
+        <div class="page-actions">
+            <button type="button" class="btn secondary" th:data-copy="${commande.numero}"><i class="fa-regular fa-copy" aria-hidden="true"></i> Copier le numéro</button>
+        </div>
+    </header>
+
+    <div class="notice notice-error" role="alert" th:if="${commande.enRetard}">
+        <i class="fa-solid fa-clock mt-1" aria-hidden="true"></i>
+        <div><strong>Cette commande est en retard.</strong> La date de livraison prévue est dépassée : pensez à contacter le livreur ou le client.</div>
+    </div>
+
+    <div class="detail-grid">
+
+        <!-- ============ Colonne principale ============ -->
+        <div class="detail-col">
+
+            <section class="panel" aria-labelledby="trajet-title">
+                <div class="panel-head">
+                    <h2 class="panel-title" id="trajet-title"><span class="ico"><i class="fa-solid fa-route" aria-hidden="true"></i></span>Trajet</h2>
+                    <span class="text-soft small"><i class="fa-solid fa-location-dot me-1" aria-hidden="true"></i><span th:text="${commande.zone}">Zone</span></span>
+                </div>
+                <div class="panel-body">
+                    <ol class="trail">
+                        <li class="trail-stop">
+                            <span class="trail-pin"><i class="fa-solid fa-box-open" aria-hidden="true"></i></span>
+                            <span><small>Enlèvement</small><strong th:text="${commande.adresseEnlevement}">Adresse</strong></span>
+                        </li>
+                        <li class="trail-stop end">
+                            <span class="trail-pin"><i class="fa-solid fa-flag-checkered" aria-hidden="true"></i></span>
+                            <span><small>Livraison</small><strong th:text="${commande.adresseLivraison}">Adresse</strong></span>
+                        </li>
+                    </ol>
+                </div>
+            </section>
+
+            <section class="panel" aria-labelledby="colis-title">
+                <div class="panel-head">
+                    <h2 class="panel-title" id="colis-title"><span class="ico amber"><i class="fa-solid fa-box" aria-hidden="true"></i></span>Colis et tarif</h2>
+                </div>
+                <div class="panel-body">
+                    <dl class="info-grid info">
+                        <div><dt>Poids</dt><dd th:text="${#numbers.formatDecimal(commande.poids, 1, 'WHITESPACE', 1, 'COMMA')} + ' kg'">0 kg</dd></div>
+                        <div><dt>Volume</dt><dd th:text="${#numbers.formatDecimal(commande.volume, 1, 'WHITESPACE', 2, 'COMMA')} + ' m³'">0 m³</dd></div>
+                        <div><dt>Distance</dt><dd th:text="${#numbers.formatDecimal(commande.distance, 1, 'WHITESPACE', 1, 'COMMA')} + ' km'">0 km</dd></div>
+                        <div><dt>Priorité</dt><dd><span th:replace="~{fragments :: badgePriorite(${commande.priorite})}"></span></dd></div>
+                        <div><dt>Livreur</dt>
+                            <dd>
+                                <span th:if="${commande.nomLivreur != null}" th:text="${commande.nomLivreur}">Livreur</span>
+                                <span class="text-faint fw-normal" th:if="${commande.nomLivreur == null}">Non assigné</span>
+                            </dd>
+                        </div>
+                        <div><dt>Prix</dt><dd class="big" th:text="${#numbers.formatDecimal(commande.prix, 0, 'WHITESPACE', 0, 'POINT')} + ' Ar'">0 Ar</dd></div>
+                    </dl>
+                </div>
+            </section>
+        </div>
+
+        <!-- ============ Colonne latérale ============ -->
+        <div class="detail-col">
+
+            <section class="panel" aria-labelledby="suivi-title">
+                <div class="panel-head">
+                    <h2 class="panel-title" id="suivi-title"><span class="ico emerald"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i></span>Progression</h2>
+                </div>
+                <div class="panel-body" th:with="idx=${commande.statut.ordinal()}">
+                    <ol class="route route-vertical" aria-label="Étapes de la commande">
+                        <li th:replace="~{fragments :: routeStep(0, 'CREEE', ${idx})}"></li>
+                        <li th:replace="~{fragments :: routeStep(1, 'ASSIGNEE', ${idx})}"></li>
+                        <li th:replace="~{fragments :: routeStep(2, 'PRISE_EN_CHARGE', ${idx})}"></li>
+                        <li th:replace="~{fragments :: routeStep(3, 'EN_TRANSIT', ${idx})}"></li>
+                        <li th:replace="~{fragments :: routeStep(4, 'LIVREE', ${idx})}"></li>
+                    </ol>
+                    <div class="route-banner mt-4" th:if="${idx >= 5}">
+                        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                        <span th:text="'Statut : ' + #{statut.__${commande.statut}__}">Statut</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel" id="actions" aria-labelledby="actions-title" sec:authorize="hasAnyRole('ADMIN','MANAGER','OPERATOR')">
+                <div class="panel-head">
+                    <h2 class="panel-title" id="actions-title"><span class="ico"><i class="fa-solid fa-bolt" aria-hidden="true"></i></span>Actions</h2>
+                </div>
+                <div class="panel-body">
+
+                    <div class="action-block" th:if="${commande.statut.name() == 'CREEE'}">
+                        <form th:action="@{/commandes/{id}/assigner(id=${commande.id})}" method="post" class="d-grid gap-3">
+                            <div class="field">
+                                <label for="livreurId">Livreur</label>
+                                <input type="number" id="livreurId" name="livreurId" class="form-control" min="1" placeholder="ID du livreur (optionnel)">
+                                <span class="field-hint">Laissez vide pour une attribution automatique.</span>
+                            </div>
+                            <button type="submit" class="btn"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> Assigner</button>
+                        </form>
+                    </div>
+
+                    <div class="action-block" th:if="${commande.statut.name() == 'ASSIGNEE'}">
+                        <form th:action="@{/commandes/{id}/pickup(id=${commande.id})}" method="post" class="d-grid">
+                            <button type="submit" class="btn"><i class="fa-solid fa-hand-holding" aria-hidden="true"></i> Marquer pris en charge</button>
+                        </form>
+                    </div>
+
+                    <div class="action-block" th:if="${commande.statut.name() == 'PRISE_EN_CHARGE'}">
+                        <form th:action="@{/commandes/{id}/transit(id=${commande.id})}" method="post" class="d-grid">
+                            <button type="submit" class="btn"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i> Démarrer le transit</button>
+                        </form>
+                    </div>
+
+                    <div class="action-block" th:if="${commande.statut.name() == 'EN_TRANSIT'}">
+                        <form th:action="@{/commandes/{id}/livrer(id=${commande.id})}" method="post" class="d-grid gap-3" data-validate>
+                            <div class="field">
+                                <label for="nomReceptionnaire">Nom du réceptionnaire <span class="req">*</span></label>
+                                <input type="text" id="nomReceptionnaire" name="nomReceptionnaire" class="form-control" required
+                                       placeholder="Personne ayant reçu le colis" data-msg-required="Indiquez qui a réceptionné le colis.">
+                            </div>
+                            <div class="field">
+                                <label for="commentaire">Commentaire</label>
+                                <input type="text" id="commentaire" name="commentaire" class="form-control" placeholder="Facultatif">
+                            </div>
+                            <button type="submit" class="btn success"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Confirmer la livraison</button>
+                        </form>
+                    </div>
+
+                    <div class="action-block" th:if="${commande.statut.name() != 'LIVREE' and commande.statut.name() != 'ANNULEE'}">
+                        <form th:action="@{/commandes/{id}/annuler(id=${commande.id})}" method="post" class="d-grid"
+                              data-confirm-tone="danger" data-confirm-title="Annuler cette commande ?" data-confirm-label="Annuler la commande"
+                              th:data-confirm="'La commande ' + ${commande.numero} + ' sera annulée. Cette action est irréversible.'">
+                            <button type="submit" class="btn danger"><i class="fa-solid fa-ban" aria-hidden="true"></i> Annuler la commande</button>
+                        </form>
+                    </div>
+
+                    <p class="text-soft mb-0" th:if="${commande.statut.name() == 'LIVREE' or commande.statut.name() == 'ANNULEE'}">
+                        Aucune action disponible : cette commande est clôturée.
+                    </p>
+                </div>
+            </section>
+
+            <section class="panel" id="incident" aria-labelledby="incident-title" sec:authorize="hasAnyRole('ADMIN','MANAGER','OPERATOR')">
+                <div class="panel-head">
+                    <h2 class="panel-title" id="incident-title"><span class="ico coral"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></span>Signaler un incident</h2>
+                </div>
+                <div class="panel-body">
+                    <form th:action="@{/commandes/{id}/incident(id=${commande.id})}" method="post" class="d-grid gap-3">
+                        <div class="field">
+                            <label for="type">Type d'incident</label>
+                            <select id="type" name="type" class="form-select">
+                                <option th:each="t : ${typesIncident}" th:value="${t}" th:text="#{incident.__${t}__}">Type</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="description">Description</label>
+                            <textarea id="description" name="description" class="form-control" rows="3" placeholder="Que s'est-il passé ?"></textarea>
+                        </div>
+                        <button type="submit" class="btn danger"><i class="fa-solid fa-flag" aria-hidden="true"></i> Signaler</button>
+                    </form>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+</body>
+</html>

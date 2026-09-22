@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Connexion')}"></head>
+<body>
+<div class="auth-shell">
+
+    <aside class="auth-brand">
+        <div class="brand">
+            <span class="brand-mark"><i class="fa-solid fa-box-open" aria-hidden="true"></i></span>
+            <span class="brand-text"><strong>Livraison</strong></span>
+        </div>
+
+        <div>
+            <p class="auth-tagline">Suivez chaque colis, de l'enlèvement à la remise.</p>
+            <ul class="auth-points">
+                <li><i class="fa-solid fa-truck-fast" aria-hidden="true"></i>Commandes, livreurs et incidents au même endroit</li>
+                <li><i class="fa-solid fa-bell" aria-hidden="true"></i>Retards repérés en un coup d'œil</li>
+                <li><i class="fa-solid fa-chart-simple" aria-hidden="true"></i>Indicateurs de performance en temps réel</li>
+            </ul>
+        </div>
+
+        <svg class="auth-route" viewBox="0 0 800 220" fill="none" aria-hidden="true">
+            <path d="M0 170 C120 170 140 60 260 70 S420 190 540 130 S700 30 800 60" stroke="#9aa0ff" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="260" cy="70" r="7" fill="#10b981"/><circle cx="540" cy="130" r="7" fill="#f59e0b"/><circle cx="800" cy="60" r="7" fill="#f0574a"/>
+        </svg>
+    </aside>
+
+    <section class="auth-panel">
+        <button type="button" class="icon-btn theme-toggle" data-theme-toggle aria-label="Basculer entre thème clair et sombre">
+            <i class="fa-solid fa-moon theme-moon" aria-hidden="true"></i>
+            <i class="fa-solid fa-sun theme-sun" aria-hidden="true"></i>
+        </button>
+
+        <div class="auth-card">
+            <h1>Connexion</h1>
+            <p class="page-sub mb-4">Accédez à votre espace de gestion des livraisons.</p>
+
+            <div class="notice notice-error" role="alert" th:if="${param.error}">
+                <i class="fa-solid fa-circle-exclamation mt-1" aria-hidden="true"></i>Identifiants incorrects. Vérifiez votre nom d'utilisateur et votre mot de passe.
+            </div>
+            <div class="notice notice-success" role="status" th:if="${param.logout}">
+                <i class="fa-solid fa-circle-check mt-1" aria-hidden="true"></i>Vous avez été déconnecté avec succès.
+            </div>
+
+            <form th:action="@{/login}" method="post" class="d-grid gap-3" data-validate>
+                <div class="field">
+                    <label for="username">Nom d'utilisateur</label>
+                    <div class="input-icon">
+                        <i class="fa-solid fa-user" aria-hidden="true"></i>
+                        <input type="text" id="username" name="username" class="form-control" required autofocus
+                               autocomplete="username" data-msg-required="Saisissez votre nom d'utilisateur.">
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="password">Mot de passe</label>
+                    <div class="input-icon position-relative">
+                        <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                        <input type="password" id="password" name="password" class="form-control" required
+                               autocomplete="current-password" data-msg-required="Saisissez votre mot de passe." style="padding-right: 3rem;">
+                        <button type="button" class="icon-btn sm pw-toggle" data-toggle-password="#password" aria-label="Afficher le mot de passe">
+                            <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-lg mt-2">Se connecter <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+            </form>
+
+            <!-- Comptes de démonstration : à retirer en production -->
+            <div class="demo-accounts">
+                <p>Comptes de démonstration — cliquez pour remplir</p>
+                <div class="chips">
+                    <button type="button" class="chip" data-fill-user="admin" data-fill-pass="admin123">Admin</button>
+                    <button type="button" class="chip" data-fill-user="manager" data-fill-pass="manager123">Manager</button>
+                    <button type="button" class="chip" data-fill-user="operator" data-fill-pass="operator123">Opérateur</button>
+                    <button type="button" class="chip" data-fill-user="user" data-fill-pass="user123">Utilisateur</button>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

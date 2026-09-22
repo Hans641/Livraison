@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Livreur')}"></head>
+<body>
+<div th:replace="~{fragments :: nav}"></div>
+
+<main class="page" id="contenu">
+    <div th:replace="~{fragments :: messages}"></div>
+
+    <a class="back-link" th:href="@{/livreurs}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour aux livreurs</a>
+    <header class="page-head">
+        <div>
+            <h1 th:text="${id} != null ? 'Modifier le livreur' : 'Nouveau livreur'">Nouveau livreur</h1>
+            <p class="page-sub">Les champs marqués d'une <span class="text-danger fw-bold">*</span> sont obligatoires.</p>
+        </div>
+    </header>
+
+    <form th:action="${id} != null ? @{/livreurs/{id}(id=${id})} : @{/livreurs}" th:object="${livreur}" method="post" class="form-layout" data-validate>
+
+        <div class="notice notice-error" role="alert" th:if="${#fields.hasErrors('*')}">
+            <i class="fa-solid fa-circle-exclamation mt-1" aria-hidden="true"></i>
+            <div>
+                <strong>Le formulaire contient des erreurs</strong>
+                <ul><li th:each="e : ${#fields.errors('*')}" th:text="${e}">Erreur</li></ul>
+            </div>
+        </div>
+
+        <section class="panel">
+            <div class="panel-head">
+                <h2 class="panel-title"><span class="ico"><i class="fa-solid fa-id-badge" aria-hidden="true"></i></span>Informations du livreur</h2>
+            </div>
+            <div class="panel-body">
+                <div class="form-grid">
+                    <div class="field" th:classappend="${#fields.hasErrors('nom')} ? 'has-error'">
+                        <label for="nom">Nom complet <span class="req">*</span></label>
+                        <div class="input-icon">
+                            <i class="fa-solid fa-user" aria-hidden="true"></i>
+                            <input type="text" th:field="*{nom}" class="form-control" placeholder="Ex : Rabe Jean" required data-msg-required="Indiquez le nom du livreur.">
+                        </div>
+                        <p class="field-error" th:errors="*{nom}"></p>
+                    </div>
+
+                    <div class="field" th:classappend="${#fields.hasErrors('telephone')} ? 'has-error'">
+                        <label for="telephone">Téléphone <span class="req">*</span></label>
+                        <div class="input-icon">
+                            <i class="fa-solid fa-phone" aria-hidden="true"></i>
+                            <input type="tel" th:field="*{telephone}" class="form-control" placeholder="Ex : 034 12 345 67" required data-msg-required="Indiquez un numéro de téléphone.">
+                        </div>
+                        <p class="field-error" th:errors="*{telephone}"></p>
+                    </div>
+
+                    <div class="field" th:classappend="${#fields.hasErrors('vehicule')} ? 'has-error'">
+                        <label for="vehicule">Véhicule <span class="req">*</span></label>
+                        <div class="input-icon">
+                            <i class="fa-solid fa-motorcycle" aria-hidden="true"></i>
+                            <input type="text" th:field="*{vehicule}" class="form-control" placeholder="Ex : Moto Yamaha" required data-msg-required="Indiquez le véhicule utilisé.">
+                        </div>
+                        <p class="field-error" th:errors="*{vehicule}"></p>
+                    </div>
+
+                    <div class="field" th:classappend="${#fields.hasErrors('zoneActivite')} ? 'has-error'">
+                        <label for="zoneActivite">Zone d'activité <span class="req">*</span></label>
+                        <div class="input-icon">
+                            <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                            <input type="text" th:field="*{zoneActivite}" class="form-control" placeholder="Ex : Tanà Sud" required data-msg-required="Indiquez la zone d'activité.">
+                        </div>
+                        <p class="field-error" th:errors="*{zoneActivite}"></p>
+                    </div>
+
+                    <div class="field" th:classappend="${#fields.hasErrors('statut')} ? 'has-error'">
+                        <label for="statut">Statut</label>
+                        <select th:field="*{statut}" class="form-select">
+                            <option th:each="s : ${statuts}" th:value="${s}" th:text="#{livreur.__${s}__}">Statut</option>
+                        </select>
+                        <p class="field-error" th:errors="*{statut}"></p>
+                    </div>
+
+                    <div class="field" th:classappend="${#fields.hasErrors('capaciteMaximale')} ? 'has-error'">
+                        <label for="capaciteMaximale">Capacité maximale <span class="req">*</span></label>
+                        <div class="input-suffix">
+                            <input type="number" step="any" inputmode="decimal" th:field="*{capaciteMaximale}" class="form-control" placeholder="0" required data-positive
+                                   data-msg-required="Indiquez la capacité maximale.">
+                            <span class="suffix">kg</span>
+                        </div>
+                        <p class="field-error" th:errors="*{capaciteMaximale}"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <a th:href="@{/livreurs}" class="btn secondary">Annuler</a>
+                <button type="submit" class="btn"><i class="fa-solid fa-check" aria-hidden="true"></i> Enregistrer</button>
+            </div>
+        </section>
+    </form>
+</main>
+</body>
+</html>

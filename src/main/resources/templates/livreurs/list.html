@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Livreurs')}"></head>
+<body>
+<div th:replace="~{fragments :: nav}"></div>
+
+<main class="page" id="contenu">
+    <div th:replace="~{fragments :: messages}"></div>
+
+    <header class="page-head">
+        <div>
+            <h1>Livreurs</h1>
+            <p class="page-sub">Votre équipe de terrain et leur disponibilité
+                · <strong th:text="${livreurs.totalElements}">0</strong> au total</p>
+        </div>
+        <div class="page-actions">
+            <a th:href="@{/livreurs/nouveau}" class="btn"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nouveau livreur</a>
+        </div>
+    </header>
+
+    <section class="panel" aria-label="Liste des livreurs">
+        <div class="table-tools">
+            <div class="search">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input type="search" id="livreurs-search" class="form-control" autocomplete="off"
+                       placeholder="Rechercher un nom, un véhicule, une zone…"
+                       aria-label="Rechercher dans les livreurs affichés" data-table-search="livreurs-table">
+                <kbd aria-hidden="true">/</kbd>
+                <button type="button" class="search-clear" aria-label="Effacer la recherche"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+            </div>
+            <span class="table-count" data-table-count="livreurs-table" aria-live="polite"></span>
+        </div>
+
+        <nav class="pills" aria-label="Filtrer par statut">
+            <a class="pill" th:classappend="${statutFiltre == null} ? 'active'" th:href="@{/livreurs}">Tous</a>
+            <a class="pill" th:each="s : ${statuts}"
+               th:classappend="'pill-' + ${s} + (${s == statutFiltre} ? ' active' : '')"
+               th:href="@{/livreurs(statut=${s})}">
+                <span class="dot" aria-hidden="true"></span><span th:text="#{livreur.__${s}__}">Statut</span>
+            </a>
+        </nav>
+
+        <th:block th:unless="${livreurs.isEmpty()}">
+            <div class="table-wrap">
+                <table id="livreurs-table" class="data-table table-cards" data-table data-noun="livreur">
+                    <thead>
+                    <tr>
+                        <th data-sort="text">Livreur</th>
+                        <th data-sort="text">Véhicule</th>
+                        <th data-sort="text">Zone</th>
+                        <th data-sort="number">Statut</th>
+                        <th data-sort="number" class="num">Capacité</th>
+                        <th data-sort="number" class="num">Charge actuelle</th>
+                        <th class="col-actions"><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="l : ${livreurs.content}" data-row>
+                        <td class="c-main">
+                            <div class="cell-user">
+                                <span class="avatar" aria-hidden="true" th:text="${#strings.toUpperCase(#strings.substring(l.nom, 0, 1))}">R</span>
+                                <span>
+                                    <span class="cell-title" th:text="${l.nom}">Nom</span>
+                                    <span class="cell-sub" th:text="${l.telephone}">034 00 000 00</span>
+                                </span>
+                            </div>
+                        </td>
+                        <td class="c-meta" data-label="Véhicule" th:text="${l.vehicule}">Véhicule</td>
+                        <td class="c-meta" data-label="Zone" th:text="${l.zoneActivite}">Zone</td>
+                        <td class="c-status" th:data-sort-value="${l.statut.ordinal()}">
+                            <span th:replace="~{fragments :: badgeLivreur(${l.statut})}"></span>
+                        </td>
+                        <td class="c-meta num" data-label="Capacité" th:data-sort-value="${l.capaciteMaximale}">
+                            <span class="nowrap"><span class="fw-bold" th:text="${#numbers.formatDecimal(l.capaciteMaximale, 1, 'WHITESPACE', 0, 'POINT')}">0</span> <span class="text-faint">kg</span></span>
+                        </td>
+                        <td class="c-meta num" data-label="Charge actuelle" th:data-sort-value="${l.chargeActuelle}" th:text="${l.chargeActuelle}">0</td>
+                        <td class="col-actions c-actions no-search">
+                            <div class="row-actions">
+                                <a class="icon-btn sm" th:href="@{/livreurs/{id}/modifier(id=${l.id})}" aria-label="Modifier" title="Modifier">
+                                    <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                                </a>
+                                <form th:action="@{/livreurs/{id}/supprimer(id=${l.id})}" method="post" class="d-inline"
+                                      data-confirm-tone="danger" data-confirm-title="Supprimer ce livreur ?" data-confirm-label="Supprimer"
+                                      th:data-confirm="'« ' + ${l.nom} + ' » sera définitivement supprimé. Cette action est irréversible.'">
+                                    <button type="submit" class="icon-btn sm" aria-label="Supprimer" title="Supprimer">
+                                        <i class="fa-solid fa-trash-can text-danger" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-empty" data-table-empty="livreurs-table" hidden>
+                <span class="empty-ico"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span>
+                <h3>Aucun résultat</h3>
+                <p>Aucun livreur de cette page ne correspond à « <strong data-query></strong> ».</p>
+                <button type="button" class="btn secondary btn-sm" data-table-reset>Effacer la recherche</button>
+            </div>
+        </th:block>
+
+        <div class="empty-state" th:if="${livreurs.isEmpty()}">
+            <span class="empty-ico"><i class="fa-solid fa-motorcycle" aria-hidden="true"></i></span>
+            <h3>Aucun livreur trouvé</h3>
+            <p>Aucun livreur ne correspond à ce statut. Ajoutez-en un pour commencer à assigner des commandes.</p>
+            <div class="d-flex gap-2 flex-wrap justify-content-center">
+                <a class="btn secondary btn-sm" th:href="@{/livreurs}" th:if="${statutFiltre != null}">Voir tous les livreurs</a>
+                <a class="btn btn-sm" th:href="@{/livreurs/nouveau}"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nouveau livreur</a>
+            </div>
+        </div>
+
+        <nav class="pager" aria-label="Pagination" th:unless="${livreurs.isEmpty()}">
+            <p class="pager-info">
+                Affichage de
+                <strong th:text="${livreurs.number * livreurs.size + 1} + '–' + ${livreurs.number * livreurs.size + livreurs.numberOfElements}">1–10</strong>
+                sur <strong th:text="${livreurs.totalElements}">42</strong>
+            </p>
+            <ul class="pager-list" th:if="${livreurs.totalPages > 1}">
+                <li>
+                    <a class="page-btn" aria-label="Page précédente"
+                       th:classappend="${livreurs.first} ? 'disabled'"
+                       th:attr="tabindex=${livreurs.first} ? '-1', aria-disabled=${livreurs.first} ? 'true'"
+                       th:href="@{/livreurs(page=${livreurs.number - 1}, statut=${statutFiltre})}"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></a>
+                </li>
+                <th:block th:each="p : ${#numbers.sequence(0, livreurs.totalPages - 1)}">
+                    <li th:if="${p == 0 or p == livreurs.totalPages - 1 or (p >= livreurs.number - 1 and p le livreurs.number + 1)}">
+                        <a class="page-btn" th:classappend="${p == livreurs.number} ? 'active'"
+                           th:attr="aria-current=${p == livreurs.number} ? 'page'"
+                           th:href="@{/livreurs(page=${p}, statut=${statutFiltre})}" th:text="${p + 1}">1</a>
+                    </li>
+                    <li class="page-gap" aria-hidden="true"
+                        th:if="${(p == livreurs.number - 2 and p > 0) or (p == livreurs.number + 2 and p lt livreurs.totalPages - 1)}">…</li>
+                </th:block>
+                <li>
+                    <a class="page-btn" aria-label="Page suivante"
+                       th:classappend="${livreurs.last} ? 'disabled'"
+                       th:attr="tabindex=${livreurs.last} ? '-1', aria-disabled=${livreurs.last} ? 'true'"
+                       th:href="@{/livreurs(page=${livreurs.number + 1}, statut=${statutFiltre})}"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></a>
+                </li>
+            </ul>
+        </nav>
+    </section>
+</main>
+</body>
+</html>

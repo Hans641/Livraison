@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments :: head('Tableau de bord')}"></head>
+<body>
+<div th:replace="~{fragments :: nav}"></div>
+
+<main class="page" id="contenu">
+    <div th:replace="~{fragments :: messages}"></div>
+
+    <header class="page-head">
+        <div>
+            <h1><span data-greeting>Bonjour</span>, <span sec:authentication="name">admin</span></h1>
+            <p class="page-sub"><span data-today>Aperçu en temps réel de vos activités de livraison</span></p>
+        </div>
+        <div class="page-actions">
+            <a th:href="@{/commandes}" class="btn secondary"><i class="fa-solid fa-list" aria-hidden="true"></i> Toutes les commandes</a>
+            <a th:href="@{/commandes/nouvelle}" class="btn"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nouvelle commande</a>
+        </div>
+    </header>
+
+    <!-- ============ KPI ============ -->
+    <section class="kpi-grid" aria-label="Indicateurs clés">
+
+        <a class="kpi kpi-emerald" th:href="@{/commandes(statut='LIVREE')}">
+            <div class="kpi-top">
+                <span class="kpi-label">Livraisons réussies</span>
+                <span class="kpi-icon"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i></span>
+            </div>
+            <div class="kpi-value"><span th:data-count="${stats.nombreLivraisons}" th:text="${stats.nombreLivraisons}">0</span></div>
+            <div class="kpi-foot">Commandes livrées · <strong>voir la liste</strong></div>
+        </a>
+
+        <article class="kpi">
+            <div class="kpi-top">
+                <span class="kpi-label">Taux de réussite</span>
+                <span class="kpi-icon"><i class="fa-solid fa-bullseye" aria-hidden="true"></i></span>
+            </div>
+            <div class="kpi-value"><span data-decimals="1" th:data-count="${stats.tauxReussite}"
+                                         th:text="${#numbers.formatDecimal(stats.tauxReussite, 1, 'WHITESPACE', 1, 'COMMA')}">0</span><span class="unit">%</span></div>
+            <div class="meter" role="progressbar" aria-label="Taux de réussite" aria-valuemin="0" aria-valuemax="100"
+                 th:attr="aria-valuenow=${stats.tauxReussite}">
+                <span th:style="'--w:' + ${stats.tauxReussite} + '%'"></span>
+            </div>
+        </article>
+
+        <article class="kpi kpi-violet">
+            <div class="kpi-top">
+                <span class="kpi-label">Chiffre d'affaires</span>
+                <span class="kpi-icon"><i class="fa-solid fa-coins" aria-hidden="true"></i></span>
+            </div>
+            <div class="kpi-value"><span th:data-count="${stats.chiffreAffaires}"
+                                         th:text="${#numbers.formatDecimal(stats.chiffreAffaires, 0, 'WHITESPACE', 0, 'POINT')}">0</span><span class="unit">Ar</span></div>
+            <div class="kpi-foot">Somme des commandes livrées</div>
+        </article>
+
+        <a class="kpi" th:classappend="${enRetard.isEmpty()} ? 'kpi-slate' : 'kpi-coral is-hot'"
+           th:href="${enRetard.isEmpty()} ? @{/commandes} : '#retards'">
+            <div class="kpi-top">
+                <span class="kpi-label">Commandes en retard</span>
+                <span class="kpi-icon"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i></span>
+            </div>
+            <div class="kpi-value"><span th:data-count="${enRetard.size()}" th:text="${enRetard.size()}">0</span></div>
+            <div class="kpi-foot" th:if="${enRetard.isEmpty()}">Tout est dans les temps</div>
+            <div class="kpi-foot" th:unless="${enRetard.isEmpty()}"><strong>À traiter en priorité</strong> <i class="fa-solid fa-arrow-down" aria-hidden="true"></i></div>
+        </a>
+    </section>
+
+    <!-- ============ CONTENU ============ -->
+    <div class="dash-grid">
+
+        <!-- Commandes récentes -->
+        <section class="panel dash-main" aria-labelledby="recent-title">
+            <div class="panel-head">
+                <h2 class="panel-title" id="recent-title">
+                    <span class="ico"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i></span>Commandes récentes
+                </h2>
+                <a th:href="@{/commandes}" class="btn soft btn-sm">Voir tout <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+            </div>
+
+            <ul class="feed" th:unless="${commandesRecentes.isEmpty()}">
+                <li th:each="c : ${commandesRecentes}">
+                    <a class="feed-item" th:href="@{/commandes/{id}(id=${c.id})}">
+                        <span class="status-ico" th:classappend="'tone-' + ${c.statut}" aria-hidden="true"></span>
+                        <span class="min-w-0">
+                            <span class="feed-title">
+                                <span th:text="${c.numero}">CMD-0001</span>
+                                <th:block th:if="${c.enRetard}"><span th:replace="~{fragments :: badgeRetard}"></span></th:block>
+                            </span>
+                            <span class="feed-sub d-block" th:text="${c.nomClient} + ' · ' + ${c.zone}">Client · Zone</span>
+                        </span>
+                        <span class="feed-end">
+                            <span th:replace="~{fragments :: badgeStatut(${c.statut})}"></span>
+                            <span class="feed-date" th:text="${#temporals.format(c.datePrevue, 'dd/MM/yyyy HH:mm')}">01/01/2026 10:00</span>
+                        </span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="empty-state" th:if="${commandesRecentes.isEmpty()}">
+                <span class="empty-ico"><i class="fa-solid fa-box-open" aria-hidden="true"></i></span>
+                <h3>Aucune commande récente</h3>
+                <p>Les nouvelles commandes apparaîtront ici dès leur création.</p>
+                <a th:href="@{/commandes/nouvelle}" class="btn btn-sm"><i class="fa-solid fa-plus" aria-hidden="true"></i> Créer une commande</a>
+            </div>
+        </section>
+
+        <div class="dash-side">
+
+            <!-- Alertes retards (uniquement s'il y en a) -->
+            <section class="panel panel-alert" id="retards" aria-labelledby="late-title" th:unless="${enRetard.isEmpty()}">
+                <div class="panel-head">
+                    <h2 class="panel-title" id="late-title">
+                        <span class="pulse-dot" aria-hidden="true"></span>
+                        <span th:text="${enRetard.size()} + (${enRetard.size() > 1} ? ' commandes en retard' : ' commande en retard')">Retards</span>
+                    </h2>
+                </div>
+                <ul class="late-list">
+                    <li class="late-item" th:each="c : ${enRetard}">
+                        <div class="min-w-0">
+                            <div class="title" th:text="${c.numero}">CMD-0001</div>
+                            <div class="cell-sub" th:text="${c.nomClient}">Client</div>
+                            <div class="sub">Prévue le <span th:text="${#temporals.format(c.datePrevue, 'dd/MM/yyyy HH:mm')}">01/01/2026 10:00</span></div>
+                        </div>
+                        <a th:href="@{/commandes/{id}(id=${c.id})}" class="btn danger btn-sm">Intervenir</a>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- Répartition (Chart.js) -->
+            <section class="panel panel-chart" aria-labelledby="chart-title">
+                <div class="panel-head">
+                    <h2 class="panel-title" id="chart-title">
+                        <span class="ico emerald"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i></span>Répartition des commandes
+                    </h2>
+                </div>
+                <div class="panel-body">
+                    <div class="chart-layout">
+                        <div class="chart-box">
+                            <canvas id="chart-repartition" data-chart="repartition" data-size="sm"
+                                    th:data-reussite="${stats.tauxReussite}" th:data-echec="${stats.tauxEchec}"
+                                    role="img" aria-label="Répartition des commandes entre livrées, échecs et en cours"></canvas>
+                        </div>
+                        <ul class="legend" data-legend-for="chart-repartition"></ul>
+                        <div class="chart-empty empty-state" data-empty-for="chart-repartition">
+                            <span class="empty-ico"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i></span>
+                            <h3>Pas encore de données</h3>
+                            <p>Le graphique s'affichera dès la première livraison.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+
+<script defer th:src="@{/js/vendor/chart.umd.min.js}"></script>
+<script defer th:src="@{/js/charts.js}"></script>
+</body>
+</html>

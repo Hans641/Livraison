@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<!--
+  ============================================================
+  HEAD — à inclure avec : <head th:replace="~{fragments :: head('Titre')}"></head>
+  Toutes les bibliothèques sont locales (/css/vendor, /js/vendor) : l'appli fonctionne hors ligne
+  et reste accessible sans authentification (SecurityConfig autorise /css/** et /js/**).
+  ============================================================
+-->
+<head th:fragment="head(titre)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title th:text="${titre} + ' - Livraison'">Livraison</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%234f46e5'/%3E%3Cpath d='M9 12l7-4 7 4v8l-7 4-7-4zM9 12l7 4 7-4M16 16v8' fill='none' stroke='white' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+    <!-- Thème + état de la sidebar appliqués AVANT le premier rendu (évite le flash blanc) -->
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('ld-theme');
+                if (!t) { t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+                document.documentElement.setAttribute('data-bs-theme', t);
+                if (localStorage.getItem('ld-sidebar') === 'collapsed' && window.innerWidth >= 992) {
+                    document.documentElement.setAttribute('data-sidebar', 'collapsed');
+                }
+            } catch (e) { /* stockage indisponible : thème clair par défaut */ }
+        })();
+    </script>
+
+    <link rel="stylesheet" th:href="@{/css/vendor/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/vendor/fontawesome/all.min.css}">
+    <link rel="stylesheet" th:href="@{/css/vendor/fonts/plus-jakarta-sans.css}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script defer th:src="@{/js/vendor/bootstrap.bundle.min.js}"></script>
+    <script defer th:src="@{/js/app.js}"></script>
+</head>
+
+<body>
+
+<!--
+  ============================================================
+  NAV — sidebar rétractable + barre supérieure.
+  À inclure avec : <div th:replace="~{fragments :: nav}"></div>
+  (th:block : le div hôte disparaît, la sidebar et la topbar deviennent des enfants directs du <body>)
+  ============================================================
+-->
+<th:block th:fragment="nav">
+    <a class="skip-link" href="#contenu">Aller au contenu</a>
+
+    <aside class="sidebar" id="sidebar" aria-label="Navigation principale">
+        <div class="sidebar-brand">
+            <a th:href="@{/dashboard}" class="brand" aria-label="Livraison, tableau de bord">
+                <span class="brand-mark"><i class="fa-solid fa-box-open" aria-hidden="true"></i></span>
+                <span class="brand-text">
+                    <strong>Livraison</strong>
+                </span>
+            </a>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a th:href="@{/dashboard}" class="nav-link" data-tip="Tableau de bord">
+                <i class="fa-solid fa-table-cells-large" aria-hidden="true"></i><span>Tableau de bord</span>
+            </a>
+            <a th:href="@{/commandes}" class="nav-link" data-tip="Commandes">
+                <i class="fa-solid fa-box" aria-hidden="true"></i><span>Commandes</span>
+            </a>
+            <a th:href="@{/livreurs}" class="nav-link" data-tip="Livreurs" sec:authorize="hasAnyRole('ADMIN','MANAGER')">
+                <i class="fa-solid fa-motorcycle" aria-hidden="true"></i><span>Livreurs</span>
+            </a>
+            <a th:href="@{/incidents}" class="nav-link" data-tip="Incidents">
+                <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><span>Incidents</span>
+            </a>
+            <a th:href="@{/statistiques}" class="nav-link" data-tip="Statistiques" sec:authorize="hasAnyRole('ADMIN','MANAGER')">
+                <i class="fa-solid fa-chart-simple" aria-hidden="true"></i><span>Statistiques</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-user">
+            <span class="avatar" data-avatar-from=".user-name" aria-hidden="true">?</span>
+            <span class="user-meta">
+                <span class="user-name" sec:authentication="name">utilisateur</span>
+                <span class="user-role">
+                    <span class="status-dot" aria-hidden="true"></span>
+                    <span sec:authorize="hasRole('ADMIN')">Administrateur</span>
+                    <span sec:authorize="hasRole('MANAGER')">Manager</span>
+                    <span sec:authorize="hasRole('OPERATOR')">Opérateur</span>
+                    <span sec:authorize="hasRole('USER')">Utilisateur</span>
+                </span>
+            </span>
+            <form th:action="@{/logout}" method="post" class="user-logout">
+                <button type="submit" class="icon-btn" aria-label="Se déconnecter" data-tip="Se déconnecter">
+                    <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+                </button>
+            </form>
+        </div>
+    </aside>
+    <div class="sidebar-backdrop" data-sidebar-close></div>
+
+    <header class="topbar">
+        <button type="button" class="icon-btn" data-sidebar-toggle aria-controls="sidebar" aria-expanded="true"
+                aria-label="Réduire ou ouvrir le menu">
+            <i class="fa-solid fa-bars-staggered" aria-hidden="true"></i>
+        </button>
+        <div class="topbar-title" data-page-title>Livraison</div>
+        <div class="topbar-actions">
+            <button type="button" class="icon-btn theme-toggle" data-theme-toggle aria-label="Basculer entre thème clair et sombre">
+                <i class="fa-solid fa-moon theme-moon" aria-hidden="true"></i>
+                <i class="fa-solid fa-sun theme-sun" aria-hidden="true"></i>
+            </button>
+        </div>
+    </header>
+</th:block>
+
+<!--
+  ============================================================
+  MESSAGES FLASH — affichés en toasts par app.js.
+  Le <noscript> garde l'information visible si JavaScript est désactivé.
+  ============================================================
+-->
+<div th:fragment="messages">
+    <div id="ld-flash" hidden th:if="${succes != null or erreur != null}"
+         th:data-succes="${succes}" th:data-erreur="${erreur}"></div>
+    <noscript>
+        <div class="notice notice-success" th:if="${succes}" th:text="${succes}"></div>
+        <div class="notice notice-error" th:if="${erreur}" th:text="${erreur}"></div>
+    </noscript>
+</div>
+
+<!--
+  ============================================================
+  BADGES — libellés français via messages.properties
+  Usage : <span th:replace="~{fragments :: badgeStatut(${c.statut})}"></span>
+  ============================================================
+-->
+<span th:fragment="badgeStatut(s)" class="badge" th:classappend="'badge-' + ${s}" th:text="#{statut.__${s}__}">Statut</span>
+<span th:fragment="badgeLivreur(s)" class="badge" th:classappend="'badge-' + ${s}" th:text="#{livreur.__${s}__}">Statut</span>
+<span th:fragment="badgePriorite(p)" class="prio" th:classappend="'prio-' + ${p}" th:text="#{priorite.__${p}__}">Priorité</span>
+<span th:fragment="badgeIncident(t)" class="badge badge-incident" th:text="#{incident.__${t}__}">Incident</span>
+<span th:fragment="badgeRetard" class="badge badge-retard"><i class="fa-solid fa-clock" aria-hidden="true"></i>En retard</span>
+
+<!--
+  Étape du suivi vertical (page détail). idx = ordinal du statut courant.
+  États terminaux : 6 = échec de livraison, 7 = retournée (les 4 premières étapes sont acquises) ; 5 = annulée.
+-->
+<li th:fragment="routeStep(i, key, idx)" class="route-step"
+    th:classappend="${idx == i ? 'is-current' : ((idx lt 5 ? idx > i : (idx >= 6 and i le 3)) ? 'is-done' : '')} + (${i == 4} ? ' is-final' : '')">
+    <span class="route-dot"></span>
+    <span class="route-text"><strong th:text="#{statut.__${key}__}">Étape</strong></span>
+</li>
+
+</body>
+</html>

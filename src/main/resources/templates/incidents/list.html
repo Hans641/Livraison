@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Incidents')}"></head>
+<body>
+<div th:replace="~{fragments :: nav}"></div>
+
+<main class="page" id="contenu">
+    <div th:replace="~{fragments :: messages}"></div>
+
+    <header class="page-head">
+        <div>
+            <h1>Incidents</h1>
+            <p class="page-sub">Suivi des problèmes rencontrés pendant les livraisons
+                · <strong th:text="${incidents.totalElements}">0</strong> au total</p>
+        </div>
+    </header>
+
+    <section class="panel" aria-label="Liste des incidents">
+        <div class="table-tools">
+            <div class="search">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input type="search" id="incidents-search" class="form-control" autocomplete="off"
+                       placeholder="Rechercher une commande, un livreur, un type…"
+                       aria-label="Rechercher dans les incidents affichés" data-table-search="incidents-table">
+                <kbd aria-hidden="true">/</kbd>
+                <button type="button" class="search-clear" aria-label="Effacer la recherche"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+            </div>
+            <span class="table-count" data-table-count="incidents-table" aria-live="polite"></span>
+        </div>
+
+        <th:block th:unless="${incidents.isEmpty()}">
+            <div class="table-wrap">
+                <table id="incidents-table" class="data-table table-cards" data-table data-noun="incident">
+                    <thead>
+                    <tr>
+                        <th data-sort="number">Date</th>
+                        <th data-sort="text">Type</th>
+                        <th data-sort="text">Commande</th>
+                        <th data-sort="text">Livreur</th>
+                        <th>Description</th>
+                        <th data-sort="number">Statut</th>
+                        <th class="col-actions"><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="i : ${incidents.content}" data-row th:classappend="${i.resolution == null} ? 'is-late'">
+                        <td class="c-meta" data-label="Date" th:data-sort-value="${#temporals.format(i.date, 'yyyyMMddHHmm')}">
+                            <span class="cell-date">
+                                <span th:text="${#temporals.format(i.date, 'dd/MM/yyyy')}">01/01/2026</span>
+                                <small th:text="${#temporals.format(i.date, 'HH:mm')}">10:00</small>
+                            </span>
+                        </td>
+                        <td class="c-main">
+                            <span th:replace="~{fragments :: badgeIncident(${i.type})}"></span>
+                        </td>
+                        <td class="c-meta" data-label="Commande">
+                            <a class="cell-title" th:href="@{/commandes/{id}(id=${i.commandeId})}" th:text="${i.numeroCommande}">CMD-0001</a>
+                        </td>
+                        <td class="c-meta" data-label="Livreur" th:text="${i.nomLivreur} ?: '—'">Livreur</td>
+                        <td class="c-meta" data-label="Description">
+                            <span class="text-truncate-2" th:text="${i.description} ?: '—'">Description</span>
+                        </td>
+                        <td class="c-status" th:data-sort-value="${i.resolution == null} ? 0 : 1">
+                            <span class="badge badge-ouvert" th:if="${i.resolution == null}">À résoudre</span>
+                            <th:block th:unless="${i.resolution == null}">
+                                <span class="badge badge-resolu">Résolu</span>
+                                <span class="cell-sub mt-1 text-truncate-2" th:text="${i.resolution}">Résolution</span>
+                            </th:block>
+                        </td>
+                        <td class="col-actions c-actions no-search">
+                            <div class="row-actions" th:if="${i.resolution == null}">
+                                <button type="button" class="btn secondary btn-sm" data-resolve
+                                        th:data-resolve="${i.id}" th:data-numero="${i.numeroCommande}" th:data-type="#{incident.__${i.type}__}">
+                                    <i class="fa-solid fa-check" aria-hidden="true"></i> Résoudre
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-empty" data-table-empty="incidents-table" hidden>
+                <span class="empty-ico"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span>
+                <h3>Aucun résultat</h3>
+                <p>Aucun incident de cette page ne correspond à « <strong data-query></strong> ».</p>
+                <button type="button" class="btn secondary btn-sm" data-table-reset>Effacer la recherche</button>
+            </div>
+        </th:block>
+
+        <div class="empty-state" th:if="${incidents.isEmpty()}">
+            <span class="empty-ico"><i class="fa-solid fa-shield-heart" aria-hidden="true"></i></span>
+            <h3>Aucun incident signalé</h3>
+            <p>Tout se passe bien : aucun incident n'a été enregistré pour le moment.</p>
+        </div>
+
+        <nav class="pager" aria-label="Pagination" th:unless="${incidents.isEmpty()}">
+            <p class="pager-info">
+                Affichage de
+                <strong th:text="${incidents.number * incidents.size + 1} + '–' + ${incidents.number * incidents.size + incidents.numberOfElements}">1–10</strong>
+                sur <strong th:text="${incidents.totalElements}">42</strong>
+            </p>
+            <ul class="pager-list" th:if="${incidents.totalPages > 1}">
+                <li>
+                    <a class="page-btn" aria-label="Page précédente"
+                       th:classappend="${incidents.first} ? 'disabled'"
+                       th:attr="tabindex=${incidents.first} ? '-1', aria-disabled=${incidents.first} ? 'true'"
+                       th:href="@{/incidents(page=${incidents.number - 1})}"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></a>
+                </li>
+                <th:block th:each="p : ${#numbers.sequence(0, incidents.totalPages - 1)}">
+                    <li th:if="${p == 0 or p == incidents.totalPages - 1 or (p >= incidents.number - 1 and p le incidents.number + 1)}">
+                        <a class="page-btn" th:classappend="${p == incidents.number} ? 'active'"
+                           th:attr="aria-current=${p == incidents.number} ? 'page'"
+                           th:href="@{/incidents(page=${p})}" th:text="${p + 1}">1</a>
+                    </li>
+                    <li class="page-gap" aria-hidden="true"
+                        th:if="${(p == incidents.number - 2 and p > 0) or (p == incidents.number + 2 and p lt incidents.totalPages - 1)}">…</li>
+                </th:block>
+                <li>
+                    <a class="page-btn" aria-label="Page suivante"
+                       th:classappend="${incidents.last} ? 'disabled'"
+                       th:attr="tabindex=${incidents.last} ? '-1', aria-disabled=${incidents.last} ? 'true'"
+                       th:href="@{/incidents(page=${incidents.number + 1})}"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></a>
+                </li>
+            </ul>
+        </nav>
+    </section>
+</main>
+
+<!-- Modale de résolution : l'URL d'action est renseignée par app.js depuis la ligne cliquée -->
+<div class="modal fade" id="resolveModal" tabindex="-1" aria-labelledby="rv-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" method="post" data-validate
+              th:action="@{/incidents/{id}/resoudre(id='ID_PLACEHOLDER')}"
+              th:data-action-template="@{/incidents/{id}/resoudre(id='ID_PLACEHOLDER')}">
+            <div class="modal-header">
+                <h2 class="modal-title" id="rv-title">Résoudre l'incident</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-soft mb-3">Commande <strong data-rv="numero"></strong> · <span data-rv="type"></span></p>
+                <div class="field">
+                    <label for="resolution">Résolution <span class="req">*</span></label>
+                    <textarea id="resolution" name="resolution" class="form-control" rows="3" required
+                              placeholder="Décrivez comment l'incident a été résolu…" data-msg-required="Décrivez la résolution de l'incident."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn success"><i class="fa-solid fa-check" aria-hidden="true"></i> Marquer comme résolu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

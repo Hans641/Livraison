@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Nouvelle commande')}"></head>
+<body>
+<div th:replace="~{fragments :: nav}"></div>
+
+<main class="page" id="contenu">
+    <div th:replace="~{fragments :: messages}"></div>
+
+    <a class="back-link" th:href="@{/commandes}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour aux commandes</a>
+    <header class="page-head">
+        <div>
+            <h1>Nouvelle commande</h1>
+            <p class="page-sub">Renseignez les informations de l'expédition. Les champs marqués d'une <span class="text-danger fw-bold">*</span> sont obligatoires.</p>
+        </div>
+    </header>
+
+    <form th:action="@{/commandes}" th:object="${commande}" method="post" class="form-layout" data-validate>
+
+        <!-- Résumé des erreurs renvoyées par le serveur -->
+        <div class="notice notice-error" role="alert" th:if="${#fields.hasErrors('*')}">
+            <i class="fa-solid fa-circle-exclamation mt-1" aria-hidden="true"></i>
+            <div>
+                <strong>Le formulaire contient des erreurs</strong>
+                <ul><li th:each="e : ${#fields.errors('*')}" th:text="${e}">Erreur</li></ul>
+            </div>
+        </div>
+
+        <!-- Client & trajet -->
+        <section class="panel">
+            <div class="panel-head">
+                <div>
+                    <h2 class="panel-title"><span class="ico"><i class="fa-solid fa-route" aria-hidden="true"></i></span>Client et trajet</h2>
+                    <p class="panel-desc">Qui est livré, d'où vers où.</p>
+                </div>
+            </div>
+            <div class="panel-body">
+                <div class="form-grid">
+                    <div class="field span-2" th:classappend="${#fields.hasErrors('clientId')} ? 'has-error'">
+                        <label for="clientId">Client <span class="req">*</span></label>
+                        <select th:field="*{clientId}" class="form-select" required data-msg-required="Choisissez un client.">
+                            <option value="">Sélectionner un client…</option>
+                            <option th:each="cl : ${clients}" th:value="${cl.id}" th:text="${cl.nom} + ' — ' + ${cl.telephone}">Client</option>
+                        </select>
+                        <p class="field-error" th:errors="*{clientId}"></p>
+                    </div>
+
+                    <div class="field" th:classappend="${#fields.hasErrors('adresseEnlevement')} ? 'has-error'">
+                        <label for="adresseEnlevement">Adresse d'enlèvement <span class="req">*</span></label>
+                        <div class="input-icon">
+                            <i class="fa-solid fa-box-open" aria-hidden="true"></i>
+                            <input type="text" th:field="*{adresseEnlevement}" class="form-control" placeholder="Ex : Lot IVB 12, Analakely" required
+                                   data-msg-required="Indiquez l'adresse d'enlèvement.">
+                        </div>
+                        <p class="field-error" th:errors="*{adresseEnlevement}"></p>
+                    </div>
+
+                    <div class="field" th:classappend="${#fields.hasErrors('adresseLivraison')} ? 'has-error'">
+                        <label for="adresseLivraison">Adresse de livraison <span class="req">*</span></label>
+                        <div class="input-icon">
+                            <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                            <input type="text" th:field="*{adresseLivraison}" class="form-control" placeholder="Ex : Villa 30, Ivandry" required
+                                   data-msg-required="Indiquez l'adresse de livraison.">
+                        </div>
+                        <p class="field-error" th:errors="*{adresseLivraison}"></p>
+                    </div>
+
+                    <div class="field" th:classappend="${#fields.hasErrors('zone')} ? 'has-error'">
+                        <label for="zone">Zone <span class="req">*</span></label>
+                        <input type="text" th:field="*{zone}" class="form-control" placeholder="Ex : Tanà Sud" required
+                               data-msg-required="Indiquez la zone de livraison.">
+                        <p class="field-error" th:errors="*{zone}"></p>
+                    </div>
+
+                    <div class="field" th:classappend="${#fields.hasErrors('distance')} ? 'has-error'">
+                        <label for="distance">Distance <span class="req">*</span></label>
+                        <div class="input-suffix">
+                            <input type="number" step="any" inputmode="decimal" th:field="*{distance}" class="form-control" placeholder="0" required data-positive
+                                   data-msg-required="Indiquez la distance.">
+                            <span class="suffix">km</span>
+                        </div>
+                        <p class="field-error" th:errors="*{distance}"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Colis & planification -->
+        <section class="panel">
+            <div class="panel-head">
+                <div>
+                    <h2 class="panel-title"><span class="ico amber"><i class="fa-solid fa-box" aria-hidden="true"></i></span>Colis et planification</h2>
+                    <p class="panel-desc">Le prix est calculé automatiquement à partir de ces informations.</p>
+                </div>
+            </div>
+            <div class="panel-body">
+                <div class="form-grid">
+                    <div class="field" th:classappend="${#fields.hasErrors('poids')} ? 'has-error'">
+                        <label for="poids">Poids <span class="req">*</span></label>
+                        <div class="input-suffix">
+                            <input type="number" step="any" inputmode="decimal" th:field="*{poids}" class="form-control" placeholder="0" required data-positive
+                                   data-msg-required="Indiquez le poids du colis.">
+                            <span class="suffix">kg</span>
+                        </div>
+                        <p class="field-error" th:errors="*{poids}"></p>
+                    </div>
+
+                    <div class="field" th:classappend="${#fields.hasErrors('volume')} ? 'has-error'">
+                        <label for="volume">Volume <span class="req">*</span></label>
+                        <div class="input-suffix">
+                            <input type="number" step="any" inputmode="decimal" th:field="*{volume}" class="form-control" placeholder="0" required data-positive
+                                   data-msg-required="Indiquez le volume du colis.">
+                            <span class="suffix">m³</span>
+                        </div>
+                        <p class="field-error" th:errors="*{volume}"></p>
+                    </div>
+
+                    <div class="field span-2" th:classappend="${#fields.hasErrors('priorite')} ? 'has-error'">
+                        <span class="form-label" id="prio-label">Priorité <span class="req">*</span></span>
+                        <div class="choice-group" role="radiogroup" aria-labelledby="prio-label" data-default="NORMALE">
+                            <label class="choice" th:each="p : ${priorites}" th:classappend="'choice-' + ${p}">
+                                <input type="radio" th:field="*{priorite}" th:value="${p}" required data-msg-required="Choisissez une priorité.">
+                                <span class="choice-card">
+                                    <i class="fa-solid" th:classappend="${p.name() == 'NORMALE'} ? 'fa-box' : (${p.name() == 'URGENTE'} ? 'fa-bolt' : 'fa-fire')" aria-hidden="true"></i>
+                                    <span th:text="#{priorite.__${p}__}">Priorité</span>
+                                </span>
+                            </label>
+                        </div>
+                        <p class="field-error" th:errors="*{priorite}"></p>
+                    </div>
+
+                    <div class="field span-2" th:classappend="${#fields.hasErrors('datePrevue')} ? 'has-error'">
+                        <label for="datePrevue">Date et heure prévues <span class="req">*</span></label>
+                        <input type="datetime-local" th:field="*{datePrevue}" class="form-control" required data-msg-required="Indiquez la date de livraison prévue.">
+                        <p class="field-error" th:errors="*{datePrevue}"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <a th:href="@{/commandes}" class="btn secondary">Annuler</a>
+                <button type="submit" class="btn"><i class="fa-solid fa-check" aria-hidden="true"></i> Créer la commande</button>
+            </div>
+        </section>
+    </form>
+</main>
+</body>
+</html>
